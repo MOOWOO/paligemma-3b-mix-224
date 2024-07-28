@@ -17,7 +17,11 @@ handler.setFormatter(formatter)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
+if not logger.hasHandlers():
+    handler = TimedRotatingFileHandler(log_file_path, when="midnight", interval=1, backupCount=7)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
 # Ensure the uploads directory exists
 UPLOAD_DIRECTORY = "uploads"
