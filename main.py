@@ -59,6 +59,28 @@ async def predict(task: str, image: str, api_key: str = Depends(verify_api_key))
         logger.error(f"Error occurred: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
+@app.post("/capcha")
+async def generate(image: UploadFile = File(...), api_key: str = Depends(verify_api_key)):
+    try:        
+        # Read and save the uploaded image in the uploads directory
+        image_path = os.path.join(UPLOAD_DIRECTORY, image.filename)
+        contents = await image.read()
+        with open(image_path, "wb") as f:
+            f.write(contents)
+        logger.debug(f"Image saved successfully as {image_path}")
+        
+        task = "caption(KOREAN letras, KOREAN LETTERS) el "
+        output = model.run_raw_image(task, image_path)
+        task = "'"+output +"' Las letras(LETTERS) escritas son?"
+        output = model.run_raw_image(task, image_path)
+
+        logger.debug(f"Model output: {output}")
+        
+        return {"output": output}
+    except Exception as e:
+        logger.error(f"Error occurred: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
