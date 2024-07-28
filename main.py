@@ -4,6 +4,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Header, Depends
 from paligemma import PaliGemma
 from dotenv import load_dotenv
 from logging_config import logger  # Import the logger
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -17,6 +18,9 @@ os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
 
 app = FastAPI()
 model = PaliGemma()
+
+def remove_special_characters(input_string):
+    return re.sub(r'[^A-Za-z0-9]', '', input_string)
 
 # Dependency to check for API key in the request header
 def verify_api_key(x_api_key: str = Header(...)):
@@ -73,10 +77,11 @@ async def generate(image: UploadFile = File(...), api_key: str = Depends(verify_
         output = model.run_raw_image(task, image_path)
         task = "'"+output +"' Las letras(LETTERS) escritas son?"
         output = model.run_raw_image(task, image_path)
-
-        logger.debug(f"Model output: {output}")
         
-        return {"output": output}
+        cleaned_string = remove_special_characters(output)
+        logger.debug(f"Model output: {cleaned_string}")
+        
+        return {"output": cleaned_string}
     except Exception as e:
         logger.error(f"Error occurred: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
