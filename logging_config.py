@@ -12,10 +12,12 @@ handler = TimedRotatingFileHandler(log_file_path, when="midnight", interval=1, b
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 
-logger = logging.getLogger()
-logger.setLevel(logging.NOTSET)
+logger = logging.getLogger('my_logger')
+logger.setLevel(logging.DEBUG)
 
 # Avoid adding the handler multiple times
 if not logger.hasHandlers():
     logger.addHandler(handler)
-    logger.addHandler(logging.StreamHandler())
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
