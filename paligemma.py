@@ -9,19 +9,7 @@ import os
 from dotenv import load_dotenv
 import logging
 
-# Configure logging
-log_directory = "logs"
-os.makedirs(log_directory, exist_ok=True)
-log_file_path = os.path.join(log_directory, "app.log")
-handler = logging.handlers.TimedRotatingFileHandler(log_file_path, when="midnight", interval=1, backupCount=7)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-if not logger.hasHandlers():
-    logger.addHandler(handler)
+from logging_config import logger  # Import the logger
 
 torch.set_default_device("cuda")
 
