@@ -17,6 +17,7 @@ UPLOAD_DIRECTORY = "uploads"
 os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
 
 app = FastAPI()
+#app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 model = PaliGemma()
 
 def remove_special_characters(input_string):
@@ -77,7 +78,7 @@ async def generate(image: UploadFile = File(...), api_key: str = Depends(verify_
         output = model.run_raw_image(task, image_path)
         task = "'"+output +"' Las letras(LETTERS) escritas son?"
         output = model.run_raw_image(task, image_path)
-        
+
         cleaned_string = remove_special_characters(output)
         logger.debug(f"Model output: {cleaned_string}")
         
