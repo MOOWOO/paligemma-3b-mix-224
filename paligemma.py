@@ -8,6 +8,7 @@ from huggingface_hub import login
 import os
 from dotenv import load_dotenv
 
+torch.set_default_device("cuda")
 
 load_dotenv()
 access_token = os.getenv('HF_TOKEN')
@@ -39,22 +40,16 @@ class PaliGemma(BaseMultiModalModel):
     def __init__(
         self,
         model_id: str = "google/paligemma-3b-mix-224",
-        max_new_tokens: int = 1000,
+        max_new_tokens: int = 50,
         skip_special_tokens: bool = True,
         *args,
         **kwargs
     ):
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16,
-        )
-
         self.model_id = model_id
         self.model = PaliGemmaForConditionalGeneration.from_pretrained(
             model_id,
-            quantization_config=bnb_config,
             device_map="auto",
+            low_cpu_mem_usage=True,
             *args,
             **kwargs
         )
@@ -78,9 +73,34 @@ class PaliGemma(BaseMultiModalModel):
         """
         raw_image = Image.open(requests.get(image_url, stream=True).raw)
         inputs = self.processor(task, raw_image, return_tensors="pt")
-        output = self.model.generate(
-            **inputs, max_new_tokens=self.max_new_tokens, **kwargs
-        )
-        return self.processor.decode(
-            output[0], skip_special_tokens=self.skip_special_tokens
-        )[len(task) :]
+        input_len = inputs["input_ids"].shape[-1]
+
+        with torch.inference_mode():
+            generation = self.model.generate(**inputs, max_new_tokens=self.max_new_tokens , do_sample=False)
+            generation = generation[0][input_len:]
+            decoded = self.processor.decode(generation, skip_special_tokens=True)
+            return decoded.upper()
+
+    def run_raw_image(self, task: str = None, image_path: str = None, *args, **kwargs):
+        """
+        Runs the PaliGemma model for conditional generation.
+
+        Args:
+            task (str): The task or prompt for conditional generation.
+            image_path (str): The path of the image to be used as input.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            str: The generated output text.
+
+        """
+        raw_image = Image.open(image_path)
+        inputs = self.processor(task, raw_image, return_tensors="pt")
+        input_len = inputs["input_ids"].shape[-1]
+
+        with torch.inference_mode():
+            generation = self.model.generate(**inputs, max_new_tokens=self.max_new_tokens, do_sample=False)
+            generation = generation[0][input_len:]
+            decoded = self.processor.decode(generation, skip_special_tokens=True)
+            return decoded.upper()
