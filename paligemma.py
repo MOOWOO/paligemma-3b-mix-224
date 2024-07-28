@@ -7,6 +7,21 @@ from swarms import BaseMultiModalModel
 from huggingface_hub import login
 import os
 from dotenv import load_dotenv
+import logging
+
+# Configure logging
+log_directory = "logs"
+os.makedirs(log_directory, exist_ok=True)
+log_file_path = os.path.join(log_directory, "app.log")
+handler = logging.handlers.TimedRotatingFileHandler(log_file_path, when="midnight", interval=1, backupCount=7)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+if not logger.hasHandlers():
+    logger.addHandler(handler)
 
 torch.set_default_device("cuda")
 
@@ -15,28 +30,6 @@ access_token = os.getenv('HF_TOKEN')
 login(access_token)
 
 class PaliGemma(BaseMultiModalModel):
-    """
-    PaliGemma is a class that represents a model for conditional generation using the PaliGemma model.
-
-    Args:
-        model_id (str): The identifier of the PaliGemma model to be used. Default is "google/paligemma-3b-mix-224".
-        max_new_tokens (int): The maximum number of new tokens to be generated. Default is 20.
-        skip_special_tokens (bool): Whether to skip special tokens during decoding. Default is True.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
-
-    Attributes:
-        model_id (str): The identifier of the PaliGemma model.
-        model (PaliGemmaForConditionalGeneration): The PaliGemma model for conditional generation.
-        processor (AutoProcessor): The processor for the PaliGemma model.
-        max_new_tokens (int): The maximum number of new tokens to be generated.
-        skip_special_tokens (bool): Whether to skip special tokens during decoding.
-
-    Methods:
-        run: Runs the PaliGemma model for conditional generation.
-
-    """
-
     def __init__(
         self,
         model_id: str = "google/paligemma-3b-mix-224",
@@ -45,6 +38,7 @@ class PaliGemma(BaseMultiModalModel):
         *args,
         **kwargs
     ):
+        logger.debug("Initializing PaliGemma model")
         self.model_id = model_id
         self.model = PaliGemmaForConditionalGeneration.from_pretrained(
             model_id,
@@ -56,45 +50,24 @@ class PaliGemma(BaseMultiModalModel):
         self.processor = AutoProcessor.from_pretrained(model_id)
         self.max_new_tokens = max_new_tokens
         self.skip_special_tokens = skip_special_tokens
+        logger.debug("PaliGemma model initialized successfully")
 
     def run(self, task: str = None, image_url: str = None, *args, **kwargs):
-        """
-        Runs the PaliGemma model for conditional generation.
-
-        Args:
-            task (str): The task or prompt for conditional generation.
-            image_url (str): The URL of the image to be used as input.
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-            str: The generated output text.
-
-        """
+        logger.debug(f"Running model with task: {task} and image URL: {image_url}")
         raw_image = Image.open(requests.get(image_url, stream=True).raw)
         inputs = self.processor(task, raw_image, return_tensors="pt")
         input_len = inputs["input_ids"].shape[-1]
 
         with torch.inference_mode():
-            generation = self.model.generate(**inputs, max_new_tokens=self.max_new_tokens , do_sample=False)
+            generation = self.model.generate(**inputs, max_new_tokens=self.max_new_tokens, do_sample=False)
             generation = generation[0][input_len:]
             decoded = self.processor.decode(generation, skip_special_tokens=True)
-            return decoded.upper()
+            result = decoded.upper()
+            logger.debug(f"Generated output: {result}")
+            return result
 
     def run_raw_image(self, task: str = None, image_path: str = None, *args, **kwargs):
-        """
-        Runs the PaliGemma model for conditional generation.
-
-        Args:
-            task (str): The task or prompt for conditional generation.
-            image_path (str): The path of the image to be used as input.
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-            str: The generated output text.
-
-        """
+        logger.debug(f"Running model with task: {task} and image path: {image_path}")
         raw_image = Image.open(image_path)
         inputs = self.processor(task, raw_image, return_tensors="pt")
         input_len = inputs["input_ids"].shape[-1]
@@ -103,4 +76,6 @@ class PaliGemma(BaseMultiModalModel):
             generation = self.model.generate(**inputs, max_new_tokens=self.max_new_tokens, do_sample=False)
             generation = generation[0][input_len:]
             decoded = self.processor.decode(generation, skip_special_tokens=True)
-            return decoded.upper()
+            result = decoded.upper()
+            logger.debug(f"Generated output: {result}")
+            return result

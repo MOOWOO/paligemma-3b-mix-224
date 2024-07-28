@@ -27,7 +27,7 @@ if not logger.hasHandlers():
 UPLOAD_DIRECTORY = "uploads"
 os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
 
-app = FastAPI()
+app = FastAPI(debug=True)
 model = PaliGemma()
 
 @app.post("/predict")
