@@ -7,8 +7,6 @@ from swarms import BaseMultiModalModel
 from huggingface_hub import login
 import os
 from dotenv import load_dotenv
-import logging
-
 from logging_config import logger  # Import the logger
 
 torch.set_default_device("cuda")

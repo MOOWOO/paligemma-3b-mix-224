@@ -32,6 +32,22 @@ async def generate(task: str, image: UploadFile = File(...)):
         logger.error(f"Error occurred: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
+@app.post("/predict")
+@app.post("/predict")
+async def generate(task: str, image: str):
+    try:
+        logger.debug(f"Received request with task: {task}")
+
+        # Run the model
+        output = model.run(task, image)
+        logger.debug(f"Model output: {output}")
+
+        return {"output": output}
+    except Exception as e:
+        logger.error(f"Error occurred: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+빠졌다
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
