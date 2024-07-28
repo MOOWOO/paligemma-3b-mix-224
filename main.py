@@ -1,9 +1,9 @@
 import logging
 import os
+import uvicorn
 from logging.handlers import TimedRotatingFileHandler
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from paligemma import PaliGemma
-from PIL import Image
 
 # Ensure the logs directory exists
 LOG_DIRECTORY = "logs"
@@ -60,3 +60,7 @@ async def generate(task: str, image: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Error occurred: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+    
+# Ensure this code is executed if run as a standalone script
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
