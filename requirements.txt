@@ -1,0 +1,10 @@
+torch
+openai
+git+https://github.com/huggingface/transformers.git
+pillow
+requests
+swarms
+accelerate
+bitsandbytes
+tiktoken
+python-dotenv
