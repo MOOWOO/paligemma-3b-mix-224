@@ -13,7 +13,7 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.NOTSET)
 
 # Avoid adding the handler multiple times
 if not logger.hasHandlers():
